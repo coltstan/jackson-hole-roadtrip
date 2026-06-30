@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Austin → Jackson Hole Road Trip Map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root { --ink:#1d2a32; --teton:#2c5f6f; --sand:#c8743a; --paper:#f5f1e8; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color: var(--ink); }
+  #wrap { display:flex; height:100vh; }
+  #side { width:340px; background:var(--paper); overflow-y:auto; padding:18px 18px 40px; box-shadow:2px 0 12px rgba(0,0,0,.12); z-index:1000; }
+  #map { flex:1; }
+  h1 { font-size:20px; margin:0 0 2px; }
+  .sub { font-size:12.5px; color:#5a6b73; margin:0 0 14px; }
+  .gmaps { display:block; text-align:center; background:var(--teton); color:#fff; text-decoration:none; font-weight:600; padding:11px; border-radius:9px; font-size:14px; margin-bottom:16px; }
+  .gmaps:hover { background:#234d59; }
+  .day { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--sand); font-weight:700; margin:16px 0 6px; }
+  .stop { display:flex; gap:9px; padding:7px 6px; border-radius:8px; cursor:pointer; }
+  .stop:hover { background:#ece4d3; }
+  .dot { flex:0 0 22px; height:22px; border-radius:50%; color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+  .stop b { font-size:13.5px; }
+  .stop span { display:block; font-size:11.5px; color:#5a6b73; }
+  .legend { font-size:11.5px; color:#5a6b73; margin-top:18px; line-height:1.7; border-top:1px solid #d8cfbd; padding-top:12px; }
+  .key { display:inline-block; width:11px; height:11px; border-radius:50%; margin-right:5px; vertical-align:-1px; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="side">
+    <h1>Austin → Jackson Hole</h1>
+    <p class="sub">7-day round trip · truck + SUV · the "Ye" mountain run</p>
+    <a class="gmaps" id="gmapsLink" href="#" target="_blank" rel="noopener">Open driving route in Google Maps ↗</a>
+    <div id="list"></div>
+    <div class="legend">
+      <span class="key" style="background:#2c5f6f"></span> Overnight / camp<br>
+      <span class="key" style="background:#c8743a"></span> Sight &amp; stop<br>
+      <span class="key" style="background:#6b8f3a"></span> Grand Teton spot<br>
+      <br>Tiles © OpenStreetMap contributors. Drive times are estimates — check live conditions.
+    </div>
+  </div>
+  <div id="map"></div>
+</div>
+<script>
+const stops = [
+  { day:"Day 1", n:"A", type:"camp",  name:"Austin, TX", note:"Start — roll by 7 AM", ll:[30.2672,-97.7431] },
+  { day:"Day 1", n:"1", type:"sight", name:"Palo Duro Canyon SP", note:"\"Grand Canyon of Texas\"", ll:[34.9398,-101.6549] },
+  { day:"Day 1", n:"B", type:"camp",  name:"Great Sand Dunes NP", note:"Night 1 camp — dunes at sunset", ll:[37.7325,-105.5119] },
+  { day:"Day 2", n:"2", type:"sight", name:"Garden of the Gods", note:"Red rock fins (free), Colorado Springs", ll:[38.8784,-104.8694] },
+  { day:"Day 2", n:"C", type:"camp",  name:"Shadow Mountain (Jackson Hole)", note:"Nights 2–4 — free dispersed, Teton view", ll:[43.7404,-110.6010] },
+  { day:"Day 3", n:"3", type:"teton", name:"Schwabacher Landing", note:"Sunrise reflections", ll:[43.7497,-110.6620] },
+  { day:"Day 3", n:"4", type:"teton", name:"Mormon Row / Moulton Barn", note:"Iconic barn + range", ll:[43.6655,-110.6585] },
+  { day:"Day 3", n:"5", type:"teton", name:"Snake River Overlook", note:"Ansel Adams frame — the Ye view", ll:[43.7449,-110.6394] },
+  { day:"Day 3", n:"6", type:"teton", name:"Jenny Lake", note:"Boat shuttle → Inspiration Point", ll:[43.7656,-110.7211] },
+  { day:"Day 4", n:"7", type:"teton", name:"Oxbow Bend", note:"Mt. Moran reflection at sunset", ll:[43.8617,-110.5497] },
+  { day:"Day 4", n:"8", type:"sight", name:"Jackson Town Square", note:"Antler arches + dinner", ll:[43.4799,-110.7624] },
+  { day:"Day 5", n:"D", type:"camp",  name:"Estes Park / RMNP gateway", note:"Night 5 camp", ll:[40.3772,-105.5217] },
+  { day:"Day 6", n:"9", type:"sight", name:"Trail Ridge Road (RMNP)", note:"Highest paved road in the US", ll:[40.3925,-105.6836] },
+  { day:"Day 6", n:"E", type:"camp",  name:"Trinidad Lake SP, CO", note:"Night 6 camp", ll:[37.1417,-104.5697] },
+  { day:"Day 7", n:"10", type:"sight", name:"Capulin Volcano NM", note:"Drive to the crater rim", ll:[36.7819,-103.9699] },
+  { day:"Day 7", n:"F", type:"sight", name:"Big Texan, Amarillo", note:"72-oz steak pit stop", ll:[35.1959,-101.8093] },
+  { day:"Day 7", n:"A", type:"camp",  name:"Austin, TX", note:"Home", ll:[30.2672,-97.7431] },
+];
+const colors = { camp:"#2c5f6f", sight:"#c8743a", teton:"#6b8f3a" };
+const map = L.map('map');
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:18, attribution:'© OpenStreetMap' }).addTo(map);
+const markers = [];
+const latlngs = [];
+stops.forEach((s,i) => {
+  const icon = L.divIcon({ className:'', html:`<div style="background:${colors[s.type]};width:26px;height:26px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center">${s.n}</div>`, iconSize:[26,26], iconAnchor:[13,13] });
+  const m = L.marker(s.ll, { icon }).addTo(map).bindPopup(`<b>${s.name}</b><br><span style="color:#5a6b73">${s.day} — ${s.note}</span>`);
+  markers.push(m);
+  latlngs.push(s.ll);
+});
+L.polyline(latlngs, { color:'#2c5f6f', weight:3, opacity:.55, dashArray:'6,8' }).addTo(map);
+map.fitBounds(L.latLngBounds(latlngs).pad(0.08));
+
+// sidebar list
+const list = document.getElementById('list');
+let lastDay = "";
+stops.forEach((s,i) => {
+  if (s.name === "Austin, TX" && i === stops.length-1) return; // skip duplicate home in list
+  if (s.day !== lastDay) { const d=document.createElement('div'); d.className='day'; d.textContent=s.day; list.appendChild(d); lastDay=s.day; }
+  const el = document.createElement('div'); el.className='stop';
+  el.innerHTML = `<div class="dot" style="background:${colors[s.type]}">${s.n}</div><div><b>${s.name}</b><span>${s.note}</span></div>`;
+  el.onclick = () => { map.setView(s.ll, 11); markers[i].openPopup(); };
+  list.appendChild(el);
+});
+
+// Google Maps route (waypoints, in order)
+const wp = ["Austin,TX","Palo Duro Canyon State Park,TX","Great Sand Dunes National Park,CO","Garden of the Gods,CO","Jackson,WY","Grand Teton National Park,WY","Estes Park,CO","Trinidad,CO","Austin,TX"];
+document.getElementById('gmapsLink').href = "https://www.google.com/maps/dir/" + wp.map(encodeURIComponent).join("/");
+</script>
+</body>
+</html>
