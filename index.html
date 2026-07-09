@@ -4,28 +4,39 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Austin → Jackson Hole Road Trip Map</title>
+<meta name="description" content="7-day, 2,600-mile camping road trip from Austin to Grand Teton National Park — full itinerary, live map, and photos of every stop." />
+<meta property="og:title" content="Austin → Jackson Hole Road Trip" />
+<meta property="og:description" content="7-day, 2,600-mile camping road trip from Austin to Grand Teton National Park — full itinerary, live map, and photos of every stop." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://coltstan.github.io/jackson-hole-roadtrip/" />
+<meta property="og:image" content="https://coltstan.github.io/jackson-hole-roadtrip/photos/grand-teton-range.jpg" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231d2a32'/%3E%3Cpath d='M12 78 L38 34 L54 58 L72 24 L92 78 Z' fill='%23c8743a'/%3E%3C/svg%3E" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-  :root { --ink:#1d2a32; --teton:#2c5f6f; --sand:#c8743a; --paper:#f5f1e8; }
+  :root { --ink:#1d2a32; --bar:#1d2a32; --teton:#2c5f6f; --sand:#c8743a; --paper:#f5f1e8; }
   * { box-sizing: border-box; }
-  html, body { margin:0; height:100%; font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color: var(--ink); }
-  #tabbar { display:flex; height:48px; background:var(--ink); z-index:1100; position:relative; }
+  html, body { margin:0; height:100%; font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color: var(--ink); background: var(--paper); }
+  #tabbar { display:flex; height:48px; background:var(--bar); z-index:1100; position:relative; }
   .tabbtn { flex:0 0 auto; background:none; border:none; color:#b9c4c9; font-size:14px; font-weight:600; padding:0 22px; cursor:pointer; transition:background .2s,color .2s; }
   .tabbtn:hover { background:rgba(255,255,255,.06); color:#fff; }
   .tabbtn.active { color:#fff; box-shadow:inset 0 -3px 0 var(--sand); }
+  .tabbtn:focus-visible { outline:2px solid #fff; outline-offset:-3px; }
   .tabpanel { display:none; }
   .tabpanel.active { display:block; }
   #wrap { display:flex; height:calc(100vh - 48px); }
-  #side { width:340px; background:var(--paper); overflow-y:auto; padding:18px 18px 40px; box-shadow:2px 0 12px rgba(0,0,0,.12); z-index:1000; }
+  #side { width:340px; background:var(--paper); overflow-y:auto; padding:18px 18px 40px; box-shadow:2px 0 12px rgba(0,0,0,.12); z-index:1000; flex:0 0 auto; }
   #map { flex:1; }
   h1 { font-size:20px; margin:0 0 2px; }
   .sub { font-size:12.5px; color:#5a6b73; margin:0 0 14px; }
   .gmaps { display:block; text-align:center; background:var(--teton); color:#fff; text-decoration:none; font-weight:600; padding:11px; border-radius:9px; font-size:14px; margin-bottom:16px; }
   .gmaps:hover { background:#234d59; }
+  .gmaps:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
   .day { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--sand); font-weight:700; margin:16px 0 6px; }
-  .stop { display:flex; gap:9px; padding:7px 6px; border-radius:8px; cursor:pointer; }
+  .stop { display:flex; gap:9px; padding:7px 6px; border-radius:8px; cursor:pointer; width:100%; text-align:left; background:none; border:none; font:inherit; color:inherit; }
   .stop:hover { background:#ece4d3; }
+  .stop:focus-visible { outline:2px solid var(--teton); outline-offset:1px; }
   .dot { flex:0 0 22px; height:22px; border-radius:50%; color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; margin-top:1px; }
   .stop b { font-size:13.5px; }
   .stop span { display:block; font-size:11.5px; color:#5a6b73; }
@@ -41,6 +52,25 @@
   .itin-body p.credit { font-size:10.5px; color:#9aa5aa; margin:0; }
   .slides h2 { font-size:18px; margin:36px 0 14px; padding-top:20px; border-top:1px solid #d8cfbd; }
   .slides img { width:100%; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.15); margin-bottom:18px; display:block; }
+
+  @media (max-width: 700px) {
+    #wrap { flex-direction: column; }
+    #side { width:100%; height:42vh; box-shadow:0 2px 12px rgba(0,0,0,.12); }
+    #map { flex:1; min-height:180px; }
+    .itin-card { flex-direction:column; }
+    .itin-card img { width:100%; height:180px; flex:0 0 auto; }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root { --ink:#e7edf0; --paper:#1b2226; }
+    .stop:hover { background:#242e34; }
+    .legend { border-top-color:#2e3a41; }
+    .sub, .stop span, .legend, .itin-body p.note { color:#93a3ab; }
+    .itin-card { background:#20282d; box-shadow:0 1px 6px rgba(0,0,0,.4); }
+    .itin-body p.credit { color:#6b7b82; }
+    .slides h2 { border-top-color:#2e3a41; }
+    #side { box-shadow:2px 0 12px rgba(0,0,0,.5); }
+  }
 </style>
 </head>
 <body>
@@ -117,7 +147,7 @@ const markers = [];
 const latlngs = [];
 stops.forEach((s,i) => {
   const icon = L.divIcon({ className:'', html:`<div style="background:${colors[s.type]};width:26px;height:26px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center">${s.n}</div>`, iconSize:[26,26], iconAnchor:[13,13] });
-  const m = L.marker(s.ll, { icon }).addTo(map).bindPopup(`<b>${s.name}</b><br><span style="color:#5a6b73">${s.day} — ${s.note}</span><img class="popup-photo" src="${s.img}" alt="${s.name}">`, { maxWidth:220 });
+  const m = L.marker(s.ll, { icon }).addTo(map).bindPopup(`<b>${s.name}</b><br><span style="color:#5a6b73">${s.day} — ${s.note}</span><img class="popup-photo" src="${s.img}" alt="${s.name}" loading="lazy">`, { maxWidth:220 });
   markers.push(m);
   latlngs.push(s.ll);
 });
@@ -130,7 +160,7 @@ let lastDay = "";
 stops.forEach((s,i) => {
   if (s.name === "Austin, TX" && i === stops.length-1) return; // skip duplicate home in list
   if (s.day !== lastDay) { const d=document.createElement('div'); d.className='day'; d.textContent=s.day; list.appendChild(d); lastDay=s.day; }
-  const el = document.createElement('div'); el.className='stop';
+  const el = document.createElement('button'); el.type='button'; el.className='stop';
   el.innerHTML = `<div class="dot" style="background:${colors[s.type]}">${s.n}</div><div><b>${s.name}</b><span>${s.note}</span></div>`;
   el.onclick = () => { map.setView(s.ll, 11); markers[i].openPopup(); };
   list.appendChild(el);
@@ -147,7 +177,7 @@ stops.forEach((s,i) => {
   if (s.name === "Austin, TX" && i === stops.length-1) return; // skip duplicate home
   if (s.day !== itinLastDay) { const d=document.createElement('div'); d.className='day'; d.textContent=s.day; itinList.appendChild(d); itinLastDay=s.day; }
   const card = document.createElement('div'); card.className = 'itin-card';
-  card.innerHTML = `<img src="${s.img}" alt="${s.name}"><div class="itin-body"><b>${s.name}</b><p class="note">${s.note}</p><p class="credit">${s.credit}</p></div>`;
+  card.innerHTML = `<img src="${s.img}" alt="${s.name}" loading="lazy" decoding="async"><div class="itin-body"><b>${s.name}</b><p class="note">${s.note}</p><p class="credit">${s.credit}</p></div>`;
   itinList.appendChild(card);
 });
 
@@ -159,8 +189,14 @@ for (let i = 1; i <= slideCount; i++) {
   const img = document.createElement('img');
   img.src = `slides/slide-${n}.png`;
   img.alt = `Trip slide ${i}`;
+  img.loading = 'lazy';
+  img.decoding = 'async';
   slideList.appendChild(img);
 }
+
+window.addEventListener('resize', () => {
+  if (document.getElementById('tab-map').classList.contains('active')) map.invalidateSize();
+});
 </script>
 </body>
 </html>
